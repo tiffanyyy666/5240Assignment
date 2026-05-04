@@ -26,26 +26,24 @@ def text2story(text):
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
     with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="gpt2")
+        # 改成老师课堂上的故事生成模型
+        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
     
-    # Create a kid-friendly prompt
-    prompt = f"Once upon a time, there was a picture of {text}. Write a short and fun story for young children (50 to 100 words): "
-    
-    # Generate story with length control
+    # 不需要复杂的 prompt，直接用图片描述作为输入
     result = story_pipe(
-        prompt, 
-        max_new_tokens=120,
+        text,                      # 直接用图片描述
+        max_new_tokens=80,         # 生成约80个新词
         do_sample=True, 
-        temperature=0.85,
-        top_p=0.95
+        temperature=0.8,
+        top_p=0.9
     )
     
     # Extract the generated text
     full_story = result[0]['generated_text']
     
-    # Remove the prompt part if it appears in output
-    if prompt in full_story:
-        story = full_story.replace(prompt, "").strip()
+    # 去掉可能重复的输入部分
+    if full_story.startswith(text):
+        story = full_story[len(text):].strip()
     else:
         story = full_story.strip()
     

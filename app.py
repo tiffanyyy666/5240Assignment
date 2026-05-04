@@ -91,9 +91,6 @@ def main():
     """)
     
     st.divider()
-    
-    # File uploader (using st.file_uploader from class demo)
-    st.caption("📸 Please upload JPG, JPEG or PNG images")
 
     uploaded_image = st.file_uploader(
         "Upload an image", 

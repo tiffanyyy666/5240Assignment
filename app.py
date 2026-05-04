@@ -27,7 +27,7 @@ def text2story(text):
         story_pipe = pipeline("text-generation", model="gpt2")
     
     # Clear prompt to guide story generation
-    prompt = f"Once upon a time, {text}. Write a short, happy children's story."
+    prompt = f"Tell a short children's story about {text}."
     
     result = story_pipe(
         prompt,

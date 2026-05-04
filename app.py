@@ -171,5 +171,5 @@ def main():
             - Draw a picture and upload it! 🎨
             """)
 
-if __name__ "__main__":
+if __name__ == "__main__":
     main()

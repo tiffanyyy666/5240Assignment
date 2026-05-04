@@ -49,9 +49,9 @@ def text2story(text):
     if len(words) > 100:
         story = " ".join(words[:100]) + " ... The end!"
     
-    # Add a friendly ending if missing
+    # Add a period at the end if missing
     if not story.endswith((".", "!", "?")):
-        story += " The end!"
+        story += "."
     
     return story
 

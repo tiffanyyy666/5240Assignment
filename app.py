@@ -39,7 +39,6 @@ def text2story(text):
     # Extract the generated text
     full_story = result[0]['generated_text']
     
-    # 去掉可能重复的输入部分
     if full_story.startswith(text):
         story = full_story[len(text):].strip()
     else:
@@ -77,7 +76,7 @@ def main():
     )
     
     # App title and description (using st.title and st.write from class demo)
-    st.title("🎨✨ Turn Your Picture into a Magical Story! ✨🎨")
+    st.title("✨ Turn Your Picture into a Magical Story! ✨")
     st.write("Welcome to the **Kids Storyteller App**! Upload a picture and I'll write a story just for you.")
     
     # Instructions
@@ -100,8 +99,24 @@ def main():
         help="Choose a picture from your computer - any picture works!"
     )
     
+    if "story" not in st.session_state:
+        st.session_state.story = None
+    if "audio_data" not in st.session_state:
+        st.session_state.audio_data = None
+    if "description" not in st.session_state:
+        st.session_state.description = None
+    if "last_filename" not in st.session_state:
+        st.session_state.last_filename = None
+    
     # Display image with spinner (class demo style)
     if uploaded_image is not None:
+        
+        if st.session_state.last_filename != uploaded_image.name:
+            st.session_state.story = None
+            st.session_state.audio_data = None
+            st.session_state.description = None
+            st.session_state.last_filename = uploaded_image.name
+        
         with st.spinner("Loading image..."):
             time.sleep(0.5)  # Simulate a small delay (from class demo)
             image = Image.open(uploaded_image)
@@ -111,24 +126,28 @@ def main():
         
         # ===== Stage 1: Image to Text =====
         st.subheader("📝 Step 1: Understanding your picture...")
-        with st.spinner("Looking at your picture..."):
-            description = img2text(image)  # Pass PIL Image directly
+        
+        if st.session_state.description is None:
+            with st.spinner("Looking at your picture..."):
+                st.session_state.description = img2text(image)
         
         st.success("✅ I see what's in your picture!")
         with st.expander("🔍 Click to see what I see"):
-            st.write(f"*{description}*")
+            st.write(f"*{st.session_state.description}*")
         
         # ===== Stage 2: Text to Story =====
         st.subheader("📖 Step 2: Writing your story...")
-        with st.spinner("Writing a magical story just for you..."):
-            story = text2story(description)
+        
+        if st.session_state.story is None:
+            with st.spinner("Writing a magical story just for you..."):
+                st.session_state.story = text2story(st.session_state.description)
         
         st.success("✅ Your story is ready!")
         st.markdown("**Your 50-100 word story:**")
-        st.markdown(f"> {story}")
+        st.markdown(f"> {st.session_state.story}")
         
         # Show word count
-        word_count = len(story.split())
+        word_count = len(st.session_state.story.split())
         st.caption(f"📏 Word count: {word_count} words")
         
         # Warning if length is off
@@ -139,19 +158,24 @@ def main():
         
         # ===== Stage 3: Text to Audio =====
         st.subheader("🔊 Step 3: Listen to your story...")
-        with st.spinner("Preparing audio..."):
-            audio_data = text2audio(story)
+        
+        if st.session_state.audio_data is None:
+            with st.spinner("Preparing audio..."):
+                st.session_state.audio_data = text2audio(st.session_state.story)
         
         st.success("✅ Audio is ready!")
         
         # Play button (using st.button from class demo)
         if st.button("🔊 Play Story"):
-            st.audio(audio_data["audio"], sample_rate=audio_data["sampling_rate"])
+            st.audio(st.session_state.audio_data["audio"], sample_rate=st.session_state.audio_data["sampling_rate"])
             st.balloons()  # Fun celebration!
         
         # Reset option
         st.divider()
         if st.button("🔄 Start Over - Upload Another Picture"):
+            for key in ["story", "audio_data", "description", "last_filename"]:
+                if key in st.session_state:
+                    del st.session_state[key]
             st.rerun()
     
     else:
@@ -161,10 +185,7 @@ def main():
         # Fun examples
         with st.expander("💡 Tips for best stories"):
             st.markdown("""
-            - Try pictures with **animals, people, or nature** 🌳
-            - **Bright, clear pictures** work best 📸
             - Take a photo of your **favorite toy** 🧸
-            - Draw a picture and upload it! 🎨
             """)
 
 if __name__ == "__main__":

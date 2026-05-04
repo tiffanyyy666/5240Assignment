@@ -119,7 +119,7 @@ def main():
         with st.spinner("Loading image..."):
             time.sleep(0.5)  # Simulate a small delay (from class demo)
             image = Image.open(uploaded_image)
-            st.image(image, caption="Uploaded Image", use_column_width=True)
+            st.image(image, caption="Uploaded Image", use_container_width=True)
         
         st.divider()
         

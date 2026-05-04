@@ -76,8 +76,8 @@ def main():
     )
     
     # App title and description (using st.title and st.write from class demo)
-    st.title("✨ Turn Your Picture into a Magical Story! ✨")
-    st.write("Welcome to the **Kids Storyteller App**! Upload a picture and I'll write a story just for you.")
+    st.header("✨ Turn Your Picture into a Magical Story! ✨")
+    st.subheader("Welcome to the **Kids Storyteller App**! Upload a picture and I'll write a story just for you.")
     
     # Instructions
     st.markdown("""

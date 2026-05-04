@@ -169,14 +169,6 @@ def main():
         if st.button("🔊 Play Story"):
             st.audio(st.session_state.audio_data["audio"], sample_rate=st.session_state.audio_data["sampling_rate"])
             st.balloons()  # Fun celebration!
-        
-        # Reset option
-        st.divider()
-        if st.button("🔄 Start Over - Upload Another Picture"):
-            for key in ["story", "audio_data", "description", "last_filename"]:
-                if key in st.session_state:
-                    del st.session_state[key]
-            st.rerun()
     
     else:
         # Friendly prompt when no image is uploaded

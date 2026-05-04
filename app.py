@@ -26,7 +26,7 @@ def text2story(text):
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
     with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
+        story_pipe = pipeline("text-generation", model="lakhera2023/deepseek-children-stories")
     
     result = story_pipe(
         text,                   

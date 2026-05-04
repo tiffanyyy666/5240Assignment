@@ -44,12 +44,11 @@ def text2story(text):
     else:
         story = full_story.strip()
     
-    # Ensure story length is between 50-100 words
+    # Ensure story length 
     words = story.split()
     if len(words) > 100:
         story = " ".join(words[:100]) + " ... The end!"
-    
-    # Add a period at the end if missing
+
     if not story.endswith((".", "!", "?")):
         story += "."
     
@@ -75,7 +74,7 @@ def main():
         layout="centered"
     )
     
-    # App title and description (using st.title and st.write from class demo)
+    # App title and description
     st.header("✨ Turn Your Picture into a Magical Story! ✨")
     st.subheader("Welcome to the **Kids Storyteller App**! Upload a picture and I'll write a story just for you.")
     
@@ -107,7 +106,7 @@ def main():
     if "last_filename" not in st.session_state:
         st.session_state.last_filename = None
     
-    # Display image with spinner (class demo style)
+    # Display image with spinner
     if uploaded_image is not None:
         
         if st.session_state.last_filename != uploaded_image.name:
@@ -117,7 +116,7 @@ def main():
             st.session_state.last_filename = uploaded_image.name
         
         with st.spinner("Loading image..."):
-            time.sleep(0.5)  # Simulate a small delay (from class demo)
+            time.sleep(0.5) 
             image = Image.open(uploaded_image)
             st.image(image, caption="Uploaded Image", use_container_width=True)
         

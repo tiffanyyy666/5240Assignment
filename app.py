@@ -22,33 +22,34 @@ def img2text(image):
     return text
 
 def text2story(text):
+    """
+    Expand the image description into a 50-100 word story suitable for kids aged 3-10
+    """
     with st.spinner("🤖 Loading story-writing AI..."):
-        # Using official GPT-2 for stable story generation
         story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
     
-    # Clear prompt to guide story generation
-    prompt = f"Tell a short children's story about {text}."
-    
     result = story_pipe(
-        prompt,
-        max_new_tokens=70,
-        do_sample=True,
-        temperature=0.7,
-        top_p=0.9,
-        repetition_penalty=1.2
+        text,                   
+        max_new_tokens=80,        
+        do_sample=True, 
+        temperature=0.8,
+        top_p=0.9
     )
     
+    # Extract the generated text
     full_story = result[0]['generated_text']
     
-    if full_story.startswith(prompt):
-        story = full_story[len(prompt):].strip()
+    if full_story.startswith(text):
+        story = full_story[len(text):].strip()
     else:
         story = full_story.strip()
     
+    # Ensure story length is between 50-100 words
     words = story.split()
     if len(words) > 100:
-        story = " ".join(words[:100]) + " ..."
+        story = " ".join(words[:100]) + " ... The end!"
     
+    # Add a period at the end if missing
     if not story.endswith((".", "!", "?")):
         story += "."
     

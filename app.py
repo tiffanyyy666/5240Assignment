@@ -26,13 +26,11 @@ def text2story(text):
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
     with st.spinner("🤖 Loading story-writing AI..."):
-        # 改成老师课堂上的故事生成模型
         story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
     
-    # 不需要复杂的 prompt，直接用图片描述作为输入
     result = story_pipe(
-        text,                      # 直接用图片描述
-        max_new_tokens=80,         # 生成约80个新词
+        text,                   
+        max_new_tokens=80,        
         do_sample=True, 
         temperature=0.8,
         top_p=0.9
@@ -134,9 +132,9 @@ def main():
         st.caption(f"📏 Word count: {word_count} words")
         
         # Warning if length is off
-        if word_count < 30:
+        if word_count < 50:
             st.warning("⚠️ The story is a bit short. Try uploading a different picture!")
-        elif word_count > 120:
+        elif word_count > 100:
             st.info("📚 That's a longer story - enjoy!")
         
         # ===== Stage 3: Text to Audio =====

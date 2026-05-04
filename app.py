@@ -183,10 +183,8 @@ def main():
         st.info("🎈 **Let's get started!** Use the uploader above to choose a picture.")
         
         # Fun examples
-        with st.expander("💡 Tips for best stories"):
-            st.markdown("""
-            - Take a photo of your **favorite toy** 🧸
-            """)
+        with st.expander("🤔 Not sure what to upload?"):
+            st.markdown("Try taking a photo of your **favorite toy** 🧸")
 
 if __name__ == "__main__":
     main()

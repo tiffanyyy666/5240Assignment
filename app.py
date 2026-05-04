@@ -24,7 +24,7 @@ def img2text(image):
 def text2story(text):
     with st.spinner("🤖 Loading story-writing AI..."):
         # Using official GPT-2 for stable story generation
-        story_pipe = pipeline("text-generation", model="gpt2")
+        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
     
     # Clear prompt to guide story generation
     prompt = f"Tell a short children's story about {text}."

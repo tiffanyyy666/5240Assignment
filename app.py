@@ -28,28 +28,35 @@ def text2story(text):
     with st.spinner("🤖 Loading story-writing AI..."):
         story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
     
+    # 关键改动：用 prompt 包装输入，告诉模型这是一个"故事主题"
+    prompt = f"Write a short children's story about {text}. Story:"
+    
     result = story_pipe(
-        text,                   
-        max_new_tokens=80,        
-        do_sample=True, 
+        prompt,
+        max_new_tokens=80,
+        do_sample=True,
         temperature=0.8,
         top_p=0.9
     )
     
-    # Extract the generated text
     full_story = result[0]['generated_text']
     
-    if full_story.startswith(text):
-        story = full_story[len(text):].strip()
+    # 去掉 prompt 部分
+    if full_story.startswith(prompt):
+        story = full_story[len(prompt):].strip()
     else:
         story = full_story.strip()
     
-    # Ensure story length is between 50-100 words
+    # 如果故事还是以输入开头，再去掉一次
+    if story.startswith(text):
+        story = story[len(text):].strip()
+    
+    # 确保故事长度
     words = story.split()
     if len(words) > 100:
-        story = " ".join(words[:100]) + " ... The end!"
+        story = " ".join(words[:100]) + " ..."
     
-    # Add a period at the end if missing
+    # 确保有结尾标点
     if not story.endswith((".", "!", "?")):
         story += "."
     

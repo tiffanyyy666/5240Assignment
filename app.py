@@ -28,13 +28,7 @@ def text2story(text):
     with st.spinner("🤖 Loading story-writing AI..."):
         story_pipe = pipeline("text2text-generation", model="google/flan-t5-small")
     
-    prompt = (
-    "Write a warm and imaginative story for children aged 3 to 10. "
-    f"Use only {MIN_WORDS} to {MAX_WORDS} words. "
-    "Write 4 to 6 short sentences in simple English. "
-    "Do not repeat the same idea or sentence. "
-    f"Base the story on this image description: {caption}"
-    )
+    prompt = f"Tell me a short children's story: {text}"
     
     result = story_pipe(
         prompt,

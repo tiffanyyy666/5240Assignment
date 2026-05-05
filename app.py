@@ -22,37 +22,49 @@ def img2text(image):
     return text
 
 def text2story(text):
-    if not text.endswith((".", "!", "?")):
-        text = text + "."
+    """
+    Expand the image description into a 50-100 word story suitable for kids aged 3-10
+    """
+    # 清理输入，去掉 "illustration" 等词
+    clean_text = text.replace("illustration", "").replace("Illustration", "").strip()
+    
+    # 确保输入是完整句子
+    if not clean_text.endswith((".", "!", "?")):
+        clean_text = clean_text + "."
     
     with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="microsoft/DialoGPT-small")
+        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
     
-    # DialoGPT 需要这样的格式
-    prompt = f"Story: {text}\n\n"
+    # 关键改动：用故事开头模板，让模型"接续"而不是"自由发挥"
+    prompt = f"Once upon a time, there was {clean_text} "
     
     result = story_pipe(
         prompt,
-        max_new_tokens=80,
+        max_new_tokens=60,
         do_sample=True,
-        temperature=0.8,
-        top_p=0.9,
-        repetition_penalty=1.2
+        temperature=0.7,
+        top_p=0.9
     )
     
     full_story = result[0]['generated_text']
     
+    # 去掉 prompt，取生成的部分
     if full_story.startswith(prompt):
-        story = full_story[len(prompt):].strip()
+        generated_part = full_story[len(prompt):].strip()
     else:
-        story = full_story.strip()
+        generated_part = full_story.strip()
     
+    # 组合完整故事
+    story = f"Once upon a time, there was {clean_text} {generated_part}"
+    
+    # 确保故事以句号结尾
+    if not story.endswith((".", "!", "?")):
+        story += "."
+    
+    # 限制长度
     words = story.split()
     if len(words) > 100:
         story = " ".join(words[:100]) + " ..."
-    
-    if not story.endswith((".", "!", "?")):
-        story += "."
     
     return story
 

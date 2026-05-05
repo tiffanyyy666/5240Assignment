@@ -26,7 +26,7 @@ def text2story(text):
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
     with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
+        story_pipe = pipeline("text-generation", model="google/flan-t5-small")
     
     # 关键改动：用 prompt 包装输入，告诉模型这是一个"故事主题"
     prompt = f"Write a short children's story about {text}. Story:"

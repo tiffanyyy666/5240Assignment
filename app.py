@@ -31,7 +31,7 @@ def text2story(text):
     
     with st.spinner("🤖 Loading story-writing AI..."):
         # 使用 text2text-generation pipeline
-        story_pipe = pipeline("text2text-generation", model="google/flan-t5-large")
+        story_pipe = pipeline("text2text-generation", model="google/flan-t5-small")
     
     # 清晰、直接的指令
     prompt = f"""

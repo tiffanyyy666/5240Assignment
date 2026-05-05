@@ -29,9 +29,11 @@ def text2story(text):
         story_pipe = pipeline("text2text-generation", model="google/flan-t5-small")
     
     prompt = (
-        f"Write a short children's story about {text}. "
-        "The story must be 50 to 100 words. "
-        "Use short, simple sentences. Make it happy and fun for young children."
+    "Write a warm and imaginative story for children aged 3 to 10. "
+    f"Use only {MIN_WORDS} to {MAX_WORDS} words. "
+    "Write 4 to 6 short sentences in simple English. "
+    "Do not repeat the same idea or sentence. "
+    f"Base the story on this image description: {caption}"
     )
     
     result = story_pipe(

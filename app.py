@@ -25,40 +25,43 @@ def text2story(text):
     """
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
-    # 确保输入是一个完整的句子
+    # 确保输入是完整句子
     if not text.endswith((".", "!", "?")):
         text = text + "."
     
     with st.spinner("🤖 Loading story-writing AI..."):
-        # 用完整版 gpt2，不是 distilgpt2
-        story_pipe = pipeline("text-generation", model="gpt2")
+        # 使用 text2text-generation pipeline
+        story_pipe = pipeline("text2text-generation", model="google/flan-t5-large")
     
-    # 清晰的故事开头
-    prompt = f"Once upon a time, {text} "
+    # 清晰、直接的指令
+    prompt = f"""
+    Write a short children's story based on this description: {text}
+    Requirements:
+    - 50 to 100 words
+    - Happy and simple for kids aged 3-10
+    Story:
+    """
     
     result = story_pipe(
         prompt,
-        max_new_tokens=80,
-        do_sample=True,
-        temperature=0.8,
-        top_p=0.9,
-        repetition_penalty=1.2  # 减少重复
+        max_new_tokens=150,
+        do_sample=False,  # 对于 FLAN-T5，设为 False 通常效果更好，更稳定
+        temperature=0.7,
     )
     
-    full_story = result[0]['generated_text']
+    story = result[0]['generated_text'].strip()
     
-    # 去掉 prompt 部分
-    if full_story.startswith(prompt):
-        story = full_story[len(prompt):].strip()
-    else:
-        story = full_story.strip()
+    # 清理故事，确保不是重复 prompt
+    if story.lower().startswith(("write a short", "requirements:", "story:")):
+        # 如果模型还在复述指令，尝试提取第一段
+        lines = story.split('\n')
+        story = lines[0] if lines else story
     
-    # 如果还是太长，截断
+    # 确保故事长度
     words = story.split()
     if len(words) > 100:
         story = " ".join(words[:100]) + " ..."
     
-    # 确保结尾标点
     if not story.endswith((".", "!", "?")):
         story += "."
     

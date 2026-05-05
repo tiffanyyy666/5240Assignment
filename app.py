@@ -26,29 +26,28 @@ def text2story(text):
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
     with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
+        story_pipe = pipeline("text2text-generation", model="google/flan-t5-small")
+    
+    prompt = (
+        f"Write a short children's story about {text}. "
+        "The story must be 50 to 100 words. "
+        "Use short, simple sentences. Make it happy and fun for young children."
+    )
     
     result = story_pipe(
-        text,                   
-        max_new_tokens=80,        
-        do_sample=True, 
-        temperature=0.8,
+        prompt,
+        max_new_tokens=120,
+        do_sample=True,
+        temperature=0.7,
         top_p=0.9
     )
     
-    # Extract the generated text
-    full_story = result[0]['generated_text']
+    story = result[0]['generated_text'].strip()
     
-    if full_story.startswith(text):
-        story = full_story[len(text):].strip()
-    else:
-        story = full_story.strip()
-    
-    # Ensure story length 
     words = story.split()
     if len(words) > 100:
-        story = " ".join(words[:100]) + " ... The end!"
-
+        story = " ".join(words[:100]) + " ..."
+    
     if not story.endswith((".", "!", "?")):
         story += "."
     

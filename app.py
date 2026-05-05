@@ -25,18 +25,24 @@ def text2story(text):
     """
     Expand the image description into a 50-100 word story suitable for kids aged 3-10
     """
-    with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="distilgpt2")
+    # 确保输入是一个完整的句子
+    if not text.endswith((".", "!", "?")):
+        text = text + "."
     
-    # 关键改动：用 prompt 包装输入，告诉模型这是一个"故事主题"
-    prompt = f"Write a short children's story about {text}. Story:"
+    with st.spinner("🤖 Loading story-writing AI..."):
+        # 用完整版 gpt2，不是 distilgpt2
+        story_pipe = pipeline("text-generation", model="gpt2")
+    
+    # 清晰的故事开头
+    prompt = f"Once upon a time, {text} "
     
     result = story_pipe(
         prompt,
         max_new_tokens=80,
         do_sample=True,
         temperature=0.8,
-        top_p=0.9
+        top_p=0.9,
+        repetition_penalty=1.2  # 减少重复
     )
     
     full_story = result[0]['generated_text']
@@ -47,16 +53,12 @@ def text2story(text):
     else:
         story = full_story.strip()
     
-    # 如果故事还是以输入开头，再去掉一次
-    if story.startswith(text):
-        story = story[len(text):].strip()
-    
-    # 确保故事长度
+    # 如果还是太长，截断
     words = story.split()
     if len(words) > 100:
         story = " ".join(words[:100]) + " ..."
     
-    # 确保有结尾标点
+    # 确保结尾标点
     if not story.endswith((".", "!", "?")):
         story += "."
     

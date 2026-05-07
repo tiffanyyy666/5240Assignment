@@ -1,194 +1,131 @@
-# Program title: Storytelling App for Kids (3-10 years old)
-# Author: Tiffany Yao
-# Description: Upload an image, generate a 50-100 word story, and listen to audio
-
+# Program title: Storytelling App
+# Import part
 import streamlit as st
 from PIL import Image
-import time
 from transformers import pipeline
 
-# Function Part
+# ------------------ Parameters ------------------
+CAPTION_MODEL = "Salesforce/blip-image-captioning-base"
+STORY_MODEL = "roneneldan/TinyStories-33M"
+AUDIO_MODEL = "Matthijs/mms-tts-eng"
 
-def img2text(image):
-    """
-    Convert PIL Image to text description using BLIP model
-    Uses the image directly in memory (no need to save to disk)
-    """
-    with st.spinner("🤖 Loading AI model to understand pictures..."):
-        image_to_text_model = pipeline("image-to-text", model="Salesforce/blip-image-captioning-base")
-    
-    # Pass the PIL Image directly to the pipeline
-    text = image_to_text_model(image)[0]["generated_text"]
+
+# ------------------ Functions ------------------
+def img2text(image_path):
+    image_to_text_model = pipeline("image-text-to-text", model=CAPTION_MODEL)
+    image = Image.open(image_path)
+    text = image_to_text_model(image, text="a picture of")[0]["generated_text"]
+    # Remove the prompt prefix from the caption
+    prefix = "a picture of"
+    if text.lower().startswith(prefix):
+        text = text[len(prefix):].strip(", ")
     return text
 
-def text2story(text):
-    """
-    Expand the image description into a 50-100 word story suitable for kids aged 3-10
-    """
-    # 清理输入，去掉 "illustration" 等词
-    clean_text = text.replace("illustration", "").replace("Illustration", "").strip()
-    
-    # 确保输入是完整句子
-    if not clean_text.endswith((".", "!", "?")):
-        clean_text = clean_text + "."
-    
-    with st.spinner("🤖 Loading story-writing AI..."):
-        story_pipe = pipeline("text-generation", model="pranavpsv/genre-story-generator-v2")
-    
-    # 关键改动：用故事开头模板，让模型"接续"而不是"自由发挥"
-    prompt = f"Once upon a time, there was {clean_text} "
-    
-    result = story_pipe(
-        prompt,
-        max_new_tokens=60,
-        do_sample=True,
-        temperature=0.7,
-        top_p=0.9
+def text2story(scenario):
+    story_pipe = pipeline("text-generation", model=STORY_MODEL)
+
+    # 1
+    part1_prompt = (
+        f"A story for little kids.\n"
+        f"Once upon a time, there was {scenario}. "
     )
-    
-    full_story = result[0]['generated_text']
-    
-    # 去掉 prompt，取生成的部分
-    if full_story.startswith(prompt):
-        generated_part = full_story[len(prompt):].strip()
-    else:
-        generated_part = full_story.strip()
-    
-    # 组合完整故事
-    story = f"Once upon a time, there was {clean_text} {generated_part}"
-    
-    # 确保故事以句号结尾
-    if not story.endswith((".", "!", "?")):
-        story += "."
-    
-    # 限制长度
-    words = story.split()
-    if len(words) > 100:
-        story = " ".join(words[:100]) + " ..."
-    
-    return story
+    part1_raw = story_pipe(
+        part1_prompt,
+        max_new_tokens=100,
+        do_sample=True,
+        temperature=0.9,
+        top_p=0.95,
+        return_full_text=False,
+    )[0]["generated_text"]
+    part1 = finish_sentence(part1_raw)
+
+    # 2
+    part2_raw = story_pipe(
+        part1 + " One day, ",
+        max_new_tokens=100,
+        do_sample=True,
+        temperature=0.9,
+        top_p=0.95,
+        return_full_text=False,
+    )[0]["generated_text"]
+    part2 = finish_sentence(part2_raw)
+
+    # 3
+    part3_raw = story_pipe(
+        part2 + " In the end, ",
+        max_new_tokens=100,
+        do_sample=True,
+        temperature=0.9,
+        top_p=0.95,
+        return_full_text=False,
+    )[0]["generated_text"]
+    part3 = finish_sentence(part3_raw)
+
+    return f"{part1} {part2} {part3}"
 
 def text2audio(story_text):
-    """
-    Convert story text to audio data using MMS TTS model
-    """
-    with st.spinner("🤖 Loading audio AI to read your story..."):
-        audio_pipe = pipeline("text-to-audio", model="Matthijs/mms-tts-eng")
-    
-    audio_data = audio_pipe(story_text)
-    return audio_data
+    audio_pipe = pipeline("text-to-audio", model=AUDIO_MODEL)
+    return audio_pipe(story_text)
 
-# Main Part
 
-def main():
-    # Page configuration
-    st.set_page_config(
-        page_title="Kids Storyteller 🎈", 
-        page_icon="📖",
-        layout="centered"
-    )
-    
-    # App title and description
-    st.header("✨ Turn Your Picture into a Magical Story! ✨")
-    st.subheader("Welcome to the **Kids Storyteller App**! Upload a picture and I'll write a story just for you.")
-    
-    # Instructions
-    st.markdown("""
-    ### 📖 How it works:
-    1. 📸 Upload a picture
-    2. 👀 I look at what's in your picture
-    3. 📝 I write a **50-100 word story**
-    4. 🔊 You can listen to the story!
-    
-    *Perfect for kids aged 3-10* 🧸
-    """)
-    
-    st.divider()
+def finish_sentence(text):
+    """Trim generated text to the last complete sentence."""
+    for mark in [".", "!", "?"]:
+        pos = text.rfind(mark)
+        if pos > 30:
+            return text[: pos + 1].strip()
+    return text.strip() + "."
 
-    uploaded_image = st.file_uploader(
-        "Upload an image", 
-        type=["jpg", "jpeg", "png"],
-        help="Choose a picture from your device"
-    )
-    
-    if "story" not in st.session_state:
-        st.session_state.story = None
-    if "audio_data" not in st.session_state:
-        st.session_state.audio_data = None
-    if "description" not in st.session_state:
-        st.session_state.description = None
-    if "last_filename" not in st.session_state:
-        st.session_state.last_filename = None
-    
-    # Display image with spinner
-    if uploaded_image is not None:
-        
-        if st.session_state.last_filename != uploaded_image.name:
-            st.session_state.story = None
-            st.session_state.audio_data = None
-            st.session_state.description = None
-            st.session_state.last_filename = uploaded_image.name
-        
-        with st.spinner("Loading image..."):
-            time.sleep(0.5) 
-            image = Image.open(uploaded_image)
-            st.image(image, caption="Uploaded Image", use_container_width=True)
-        
-        st.divider()
-        
-        # ===== Stage 1: Image to Text =====
-        st.subheader("📝 Step 1: Understanding your picture...")
-        
-        if st.session_state.description is None:
-            with st.spinner("Looking at your picture..."):
-                st.session_state.description = img2text(image)
-        
-        st.success("✅ I see what's in your picture!")
-        with st.expander("🔍 Click to see what I see"):
-            st.write(f"*{st.session_state.description}*")
-        
-        # ===== Stage 2: Text to Story =====
-        st.subheader("📖 Step 2: Writing your story...")
-        
-        if st.session_state.story is None:
-            with st.spinner("Writing a magical story just for you..."):
-                st.session_state.story = text2story(st.session_state.description)
-        
-        st.success("✅ Your story is ready!")
-        st.markdown("**Your 50-100 word story:**")
-        st.markdown(f"> {st.session_state.story}")
-        
-        # Show word count
-        word_count = len(st.session_state.story.split())
-        st.caption(f"📏 Word count: {word_count} words")
-        
-        # Warning if length is off
-        if word_count < 50:
-            st.warning("⚠️ The story is a bit short. Try uploading a different picture!")
-        elif word_count > 100:
-            st.info("📚 That's a longer story - enjoy!")
-        
-        # ===== Stage 3: Text to Audio =====
-        st.subheader("🔊 Step 3: Listen to your story...")
-        
-        if st.session_state.audio_data is None:
-            with st.spinner("Preparing audio..."):
-                st.session_state.audio_data = text2audio(st.session_state.story)
-        
-        st.success("✅ Audio is ready!")
-        
-        # Play button (using st.button from class demo)
-        if st.button("🔊 Play Story"):
-            st.audio(st.session_state.audio_data["audio"], sample_rate=st.session_state.audio_data["sampling_rate"])
-            st.balloons()  # Fun celebration!
-    
-    else:
-        # Friendly prompt when no image is uploaded
-        st.info("🎈 **Let's get started!** Use the uploader above to choose a picture.")
-        
-        # Fun examples
-        with st.expander("🤔 Not sure what to upload?"):
-            st.markdown("Try taking a photo of your **favorite toy** 🧸")
 
-if __name__ == "__main__":
-    main()
+# ------------------ Main ------------------
+st.set_page_config(page_title="Your Image to Audio Story", page_icon="🤖")
+st.header("ISOM5240: Turn Your Image to Audio Story")
+
+source = st.radio("Choose an image source", ["Upload an image 📁", "Take a photo 📷"], horizontal=True)
+
+uploaded_file = None
+if source == "Upload an image 📁":
+    uploaded_file = st.file_uploader("Select an Image...", type=["jpg", "jpeg", "png"])
+else:
+    uploaded_file = st.camera_input("Take a picture with your camera")
+
+# Initialize session state
+for key in ["scenario", "story", "audio_data", "last_file_name"]:
+    if key not in st.session_state:
+        st.session_state[key] = None
+
+if uploaded_file is not None:
+    bytes_data = uploaded_file.getvalue()
+    with open(uploaded_file.name, "wb") as file:
+        file.write(bytes_data)
+
+    st.image(uploaded_file, caption="Uploaded Image 🖼️", use_column_width=True)
+
+    # Only re-run pipeline when the image changes
+    file_changed = st.session_state.last_file_name != uploaded_file.name
+
+    # Stage 1: Image to Text
+    if file_changed or st.session_state.scenario is None:
+        st.text("Processing img2text...")
+        st.session_state.scenario = img2text(uploaded_file.name)
+
+    st.write(f"**Scenario:** {st.session_state.scenario}")
+
+    # Stage 2: Text to Story
+    if file_changed or st.session_state.story is None:
+        st.text("Generating a story...")
+        st.session_state.story = text2story(st.session_state.scenario)
+
+    st.write(f"**Story:** {st.session_state.story}")
+
+    # Stage 3: Story to Audio
+    if file_changed or st.session_state.audio_data is None:
+        st.text("Generating audio data...")
+        st.session_state.audio_data = text2audio(st.session_state.story)
+
+    st.session_state.last_file_name = uploaded_file.name
+
+    # Show audio player persistently (not inside a button callback)
+    audio_array = st.session_state.audio_data["audio"]
+    sample_rate = st.session_state.audio_data["sampling_rate"]
+    st.audio(audio_array, sample_rate=sample_rate)

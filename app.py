@@ -21,12 +21,10 @@ def img2text(image):
     Uses the image directly in memory (no need to save to disk)
     """
     with st.spinner("🤖 Loading AI model to understand pictures..."):
-        image_to_text_model = pipeline("image-text-to-text", model=CAPTION_MODEL)
+        # 改动3：修复 pipeline 类型
+        image_to_text_model = pipeline("image-to-text", model=CAPTION_MODEL)
 
-    text = image_to_text_model(image, text="a picture of")[0]["generated_text"]
-    prefix = "a picture of"
-    if text.lower().startswith(prefix):
-        text = text[len(prefix):].strip(", ")
+    text = image_to_text_model(image)[0]["generated_text"]
     return text
 
 
@@ -118,7 +116,7 @@ def main():
     # Instructions
     st.markdown("""
     ### 📖 How it works:
-    1. 📸 Upload a picture
+    1. 📸 Upload or take a picture
     2. 👀 I look at what's in your picture
     3. 📝 I write a **50-100 word story**
     4. 🔊 You can listen to the story!
@@ -128,11 +126,22 @@ def main():
 
     st.divider()
 
-    uploaded_image = st.file_uploader(
-        "Upload an image",
-        type=["jpg", "jpeg", "png"],
-        help="Choose a picture from your device"
+    source = st.radio(
+        "Choose how to get your picture:",
+        ["📁 Upload an image", "📷 Take a photo"],
+        horizontal=True
     )
+
+    uploaded_image = None
+    
+    if source == "📁 Upload an image":
+        uploaded_image = st.file_uploader(
+            "Upload an image",
+            type=["jpg", "jpeg", "png"],
+            help="Choose a picture from your device"
+        )
+    else: 
+        uploaded_image = st.camera_input("Take a picture with your camera")
 
     if "story" not in st.session_state:
         st.session_state.story = None
@@ -145,16 +154,22 @@ def main():
 
     if uploaded_image is not None:
 
-        if st.session_state.last_filename != uploaded_image.name:
+        if source == "📷 Take a photo":
+            import time as time_module
+            file_name = f"camera_photo_{int(time_module.time())}.jpg"
+        else:
+            file_name = uploaded_image.name
+
+        if st.session_state.last_filename != file_name:
             st.session_state.story = None
             st.session_state.audio_data = None
             st.session_state.description = None
-            st.session_state.last_filename = uploaded_image.name
+            st.session_state.last_filename = file_name
 
         with st.spinner("Loading image..."):
             time.sleep(0.5)
             image = Image.open(uploaded_image)
-            st.image(image, caption="Uploaded Image", use_column_width=True)
+            st.image(image, caption="Uploaded Image", use_container_width=True)
 
         st.divider()
 
@@ -178,7 +193,7 @@ def main():
 
         st.success("✅ Your story is ready!")
         st.markdown("**Your 50-100 word story:**")
-        st.markdown(f"> {st.session_state.story}")
+        st.markdown(f"> {st.session_state.story}")  
 
         word_count = len(st.session_state.story.split())
         st.caption(f"📏 Word count: {word_count} words")
@@ -202,7 +217,7 @@ def main():
             st.balloons()  
 
     else:
-        st.info("🎈 **Let's get started!** Use the uploader above to choose a picture.")
+        st.info("🎈 **Let's get started!** Choose an option above to get your picture.")
 
         with st.expander("🤔 Not sure what to upload?"):
             st.markdown("Try taking a photo of your **favorite toy** 🧸")

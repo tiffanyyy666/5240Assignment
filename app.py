@@ -21,7 +21,6 @@ def img2text(image):
     Uses the image directly in memory (no need to save to disk)
     """
     with st.spinner("🤖 Loading AI model to understand pictures..."):
-        # 改动3：修复 pipeline 类型
         image_to_text_model = pipeline("image-to-text", model=CAPTION_MODEL)
 
     text = image_to_text_model(image)[0]["generated_text"]
